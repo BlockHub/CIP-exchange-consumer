@@ -3,7 +3,7 @@
 
 package consumer
 
-import "CIP-exchange-consumer/pkg/handlers"
+import "CIP-exchange-consumer-bitfinex/pkg/handlers"
 
 func Consumer(in chan []float64, handler handlers.Handler) {
 	for {

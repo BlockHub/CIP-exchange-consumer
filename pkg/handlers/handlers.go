@@ -4,7 +4,7 @@ package handlers
 
 import (
 	"fmt"
-	"CIP-exchange-consumer/internal/db"
+	"CIP-exchange-consumer-bitfinex/internal/db"
 	"github.com/jinzhu/gorm"
 )
 
