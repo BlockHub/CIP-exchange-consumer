@@ -58,10 +58,12 @@ func main() {
 		trades_chan := make(chan []float64)
 
 		c.WebSocket.AddSubscribe(bitfinex.ChanBook, strings.ToUpper(pair), bookChannel)
-		c.WebSocket.AddSubscribe(bitfinex.ChanTrade, bitfinex.BTCUSD, trades_chan)
+		c.WebSocket.AddSubscribe(bitfinex.ChanTrade, strings.ToUpper(pair), trades_chan)
 
 		orderhandler := handlers.OrderDbHandler{gormdb, orderbook}
-		tickerhandler := handlers.PrintHandler{}
+		tickerhandler := handlers.TickerDbHandler{gormdb, market}
+		//tickerhandler := handlers.PrintHandler{}
+
 		go consumer.Consumer(bookChannel, orderhandler)
 		go consumer.Consumer(trades_chan, tickerhandler)
 	}
