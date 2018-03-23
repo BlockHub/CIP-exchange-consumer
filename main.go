@@ -12,7 +12,7 @@ import (
 	 _ "github.com/jinzhu/gorm/dialects/postgres"
 
 	"os"
-	db "CIP-exchange-consumer/internal/db"
+	"CIP-exchange-consumer/internal/db"
 	"time"
 	"github.com/joho/godotenv"
 )
@@ -49,8 +49,11 @@ func main() {
 	gormdb.AutoMigrate(&db.BitfinexMarket{}, &db.BitfinexTicker{}, &db.BitfinexOrder{}, &db.BitfinexOrderBook{})
 
 	for _, pair := range pairs {
+		// if the market already exists, this fails (with a warning, but no error, and the market is returned
 		market := db.BitfinexMarket{0, pair[0:3], pair[len(pair)-3:]}
 		gormdb.Create(&market)
+
+		//a new orderbook is created at each disconnect/startup. Orderbooks are continuous chained orders
 		orderbook := db.BitfinexOrderBook{0, market.ID, int64(time.Now().Unix())}
 		gormdb.Create(&orderbook)
 
