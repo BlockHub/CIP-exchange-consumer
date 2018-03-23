@@ -40,7 +40,7 @@ func CreateOrGetMarket(db gorm.DB, ticker string, quote string) BitfinexMarket{
 
 func AddTicker(db gorm.DB, market BitfinexMarket, price float64, volume float64){
 	ticker := BitfinexTicker{0, market.ID, price, volume,int64(time.Now().Unix())}
-	err := db.Create(&ticker)
+	err := db.Create(&ticker).Error
 	if err != nil {
 		panic(err)
 	}
