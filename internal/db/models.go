@@ -19,8 +19,8 @@ type BitfinexOrder struct {
 
 type BitfinexMarket struct {
 	ID uint `gorm:"primary_key"`
-	Ticker string
-	Quote string
+	Ticker string	`gorm:"unique_index:idx_market"`
+	Quote string	`gorm:"unique_index:idx_market"`
 }
 
 type BitfinexTicker struct {
