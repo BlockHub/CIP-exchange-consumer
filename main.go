@@ -6,13 +6,13 @@ import (
 	"github.com/bitfinexcom/bitfinex-api-go/v1"
 	"log"
 	"strings"
-	"CIP-exchange-consumer/pkg/handlers"
-	"CIP-exchange-consumer/pkg/consumer"
+	"CIP-exchange-consumer-bitfinex/pkg/handlers"
+	"CIP-exchange-consumer-bitfinex/pkg/consumer"
 	"github.com/jinzhu/gorm"
 	 _ "github.com/jinzhu/gorm/dialects/postgres"
 
 	"os"
-	"CIP-exchange-consumer/internal/db"
+	"CIP-exchange-consumer-bitfinex/internal/db"
 	"time"
 	"github.com/joho/godotenv"
 )
