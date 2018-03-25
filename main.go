@@ -13,7 +13,6 @@ import (
 
 	"os"
 	"CIP-exchange-consumer-bitfinex/internal/db"
-	"time"
 	"github.com/joho/godotenv"
 )
 
@@ -50,12 +49,9 @@ func main() {
 
 	for _, pair := range pairs {
 		// if the market already exists, this fails (with a warning, but no error, and the market is returned
-		market := db.BitfinexMarket{0, pair[0:3], pair[len(pair)-3:]}
-		gormdb.Create(&market)
-
+		market := db.CreateGetMarket(*gormdb, pair[0:3], pair[len(pair)-3:])
 		//a new orderbook is created at each disconnect/startup. Orderbooks are continuous chained orders
-		orderbook := db.BitfinexOrderBook{0, market.ID, int64(time.Now().Unix())}
-		gormdb.Create(&orderbook)
+		orderbook := db.CreateOrderBook(*gormdb, market)
 
 		bookChannel := make(chan []float64)
 		trades_chan := make(chan []float64)
