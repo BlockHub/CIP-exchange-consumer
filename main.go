@@ -46,7 +46,22 @@ func main() {
 
 	// migrations are only performed by GORM if a table/column/index does not exist.
 	gormdb.AutoMigrate(&db.BitfinexMarket{}, &db.BitfinexTicker{}, &db.BitfinexOrder{}, &db.BitfinexOrderBook{})
-
+	err = gormdb.Exec("CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;").Error
+	if err != nil{
+		panic(err)
+	}
+	err = gormdb.Exec("SELECT create_hypertable('bitfinex_orders', 'time', if_not_exists => TRUE)").Error
+	if err != nil{
+		panic(err)
+	}
+	err = gormdb.Exec("SELECT create_hypertable('bitfinex_tickers', 'time', if_not_exists => TRUE)").Error
+	if err != nil{
+		panic(err)
+	}
+	err =gormdb.Exec("SELECT create_hypertable('bitfinex_order_books', 'time', if_not_exists => TRUE)").Error
+	if err != nil{
+		panic(err)
+	}
 	for _, pair := range pairs {
 		// if the market already exists, this fails (with a warning, but no error, and the market is returned
 		market := db.CreateGetMarket(*gormdb, pair[0:3], pair[len(pair)-3:])
