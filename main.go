@@ -22,6 +22,7 @@ func main() {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
+		panic(err)
 	}
 
 
@@ -45,20 +46,23 @@ func main() {
 	defer gormdb.Close()
 
 	// migrations are only performed by GORM if a table/column/index does not exist.
-	gormdb.AutoMigrate(&db.BitfinexMarket{}, &db.BitfinexTicker{}, &db.BitfinexOrder{}, &db.BitfinexOrderBook{})
+	err = gormdb.AutoMigrate(&db.BitfinexMarket{}, &db.BitfinexTicker{}, &db.BitfinexOrder{}, &db.BitfinexOrderBook{}).Error
+	if err != nil{
+		panic(err)
+	}
 	err = gormdb.Exec("CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;").Error
 	if err != nil{
 		panic(err)
 	}
-	err = gormdb.Exec("SELECT create_hypertable('bitfinex_orders', 'time', if_not_exists => TRUE)").Error
+	err = gormdb.Exec("SELECT create_hypertable('bitfinex_orders', 'time',  'orderbook_id', if_not_exists => TRUE)").Error
 	if err != nil{
 		panic(err)
 	}
-	err = gormdb.Exec("SELECT create_hypertable('bitfinex_tickers', 'time', if_not_exists => TRUE)").Error
+	err = gormdb.Exec("SELECT create_hypertable('bitfinex_tickers', 'time', 'market_id', if_not_exists => TRUE)").Error
 	if err != nil{
 		panic(err)
 	}
-	err =gormdb.Exec("SELECT create_hypertable('bitfinex_order_books', 'time', if_not_exists => TRUE)").Error
+	err =gormdb.Exec("SELECT create_hypertable('bitfinex_order_books', 'time', 'market_id', if_not_exists => TRUE)").Error
 	if err != nil{
 		panic(err)
 	}
