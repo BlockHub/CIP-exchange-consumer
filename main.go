@@ -1,8 +1,7 @@
 package main
 
 import (
-	"fmt"
-	//"log"
+	 "github.com/getsentry/raven-go"
 	"github.com/bitfinexcom/bitfinex-api-go/v1"
 	"log"
 	"strings"
@@ -16,15 +15,14 @@ import (
 	"github.com/joho/godotenv"
 )
 
-
-func main() {
-	// this loads all the constants stored in the .env file (not suitable for production)
-	// set variables in supervisor then.
+func init(){
 	useDotenv := true
 	if os.Getenv("PRODUCTION") == "true"{
 		useDotenv = false
 	}
 
+	// this loads all the constants stored in the .env file (not suitable for production)
+	// set variables in supervisor then.
 	if useDotenv {
 		err := godotenv.Load()
 		if err != nil {
@@ -32,49 +30,49 @@ func main() {
 			panic(err)
 		}
 	}
+}
 
 
-
-
+func main() {
 	c := bitfinex.NewClient()
 
 	pairs, err := c.Pairs.All()
 	if nil != err {
-		fmt.Println(err)
+		raven.CaptureErrorAndWait(err, nil)
 	}
 
 	err = c.WebSocket.Connect()
 	if err != nil {
-		log.Fatal("Error connecting to web socket : ", err)
+		raven.CaptureErrorAndWait(err, nil)
 	}
 	defer c.WebSocket.Close()
 
 	gormdb, err := gorm.Open(os.Getenv("DB"), os.Getenv("DB_URL"))
 	if err != nil{
-		panic(err)
+		raven.CaptureErrorAndWait(err, nil)
 	}
 	defer gormdb.Close()
 
 	// migrations are only performed by GORM if a table/column/index does not exist.
 	err = gormdb.AutoMigrate(&db.BitfinexMarket{}, &db.BitfinexTicker{}, &db.BitfinexOrder{}, &db.BitfinexOrderBook{}).Error
 	if err != nil{
-		panic(err)
+		raven.CaptureErrorAndWait(err, nil)
 	}
 	err = gormdb.Exec("CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;").Error
 	if err != nil{
-		panic(err)
+		raven.CaptureErrorAndWait(err, nil)
 	}
 	err = gormdb.Exec("SELECT create_hypertable('bitfinex_orders', 'time',  'orderbook_id', if_not_exists => TRUE)").Error
 	if err != nil{
-		panic(err)
+		raven.CaptureErrorAndWait(err, nil)
 	}
 	err = gormdb.Exec("SELECT create_hypertable('bitfinex_tickers', 'time', 'market_id', if_not_exists => TRUE)").Error
 	if err != nil{
-		panic(err)
+		raven.CaptureErrorAndWait(err, nil)
 	}
 	err =gormdb.Exec("SELECT create_hypertable('bitfinex_order_books', 'time', 'market_id', if_not_exists => TRUE)").Error
 	if err != nil{
-		panic(err)
+		raven.CaptureErrorAndWait(err, nil)
 	}
 	for _, pair := range pairs {
 		// if the market already exists, this fails (with a warning, but no error, and the market is returned
@@ -98,7 +96,7 @@ func main() {
 
 	err = c.WebSocket.Subscribe()
 	if err != nil {
-		log.Fatal(err)
+		raven.CaptureErrorAndWait(err, nil)
 	}
 }
 
