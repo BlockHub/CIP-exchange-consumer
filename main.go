@@ -30,6 +30,7 @@ func init(){
 			panic(err)
 		}
 	}
+	raven.SetDSN(os.Getenv("RAVEN_DSN"))
 }
 
 
