@@ -18,12 +18,22 @@ import (
 
 
 func main() {
-	// this loads all the constants stored in the .env file
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-		panic(err)
+	// this loads all the constants stored in the .env file (not suitable for production)
+	// set variables in supervisor then.
+	useDotenv := true
+	if os.Getenv("PRODUCTION") == "true"{
+		useDotenv = false
 	}
+
+	if useDotenv {
+		err := godotenv.Load()
+		if err != nil {
+			log.Fatal(err)
+			panic(err)
+		}
+	}
+
+
 
 
 	c := bitfinex.NewClient()
