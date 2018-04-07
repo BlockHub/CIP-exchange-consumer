@@ -12,9 +12,7 @@ import (
 	"os"
 	"CIP-exchange-consumer-bitfinex/internal/db"
 	"github.com/joho/godotenv"
-	"strconv"
-	"CIP-exchange-consumer-bitfinex/pushers"
-	"time"
+	"fmt"
 )
 
 func init(){
@@ -33,7 +31,7 @@ func init(){
 		}
 	}
 	raven.SetDSN(os.Getenv("RAVEN_DSN"))
-}
+	}
 
 
 func main() {
@@ -62,8 +60,10 @@ func main() {
 	}
 	defer remotedb.Close()
 
+	fmt.Println("Migrating")
 	db.Migrate(*localdb, *remotedb)
 
+	fmt.Println("Populating markets")
 	for _, pair := range pairs {
 		// if the market already exists, this fails (with a warning, but no error, and the market is returned
 		market := db.CreateGetMarket(*localdb, pair[0:3], pair[len(pair)-3:])
@@ -84,16 +84,7 @@ func main() {
 		go consumer.Consumer(trades_chan, tickerhandler)
 	}
 
-	// start a replication worker
-	time.Sleep(3 * time.Second)
-	limit,  err:= strconv.ParseInt(os.Getenv("REPLICATION_LIMIT"), 10, 64)
-
-	replicator := pushers.Replicator{Local:*localdb, Remote:*remotedb, Limit:limit, Name:os.Getenv("NAME")}
-	replicator.Link()
-	defer replicator.Unlink()
-	replicator.PushMarkets()
-	go replicator.Start()
-
+	fmt.Println("subscribing to orderbook")
 	err = c.WebSocket.Subscribe()
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
