@@ -9,12 +9,12 @@ import (
 	"CIP-exchange-consumer-bitfinex/pkg/consumer"
 	"github.com/jinzhu/gorm"
 	 _ "github.com/jinzhu/gorm/dialects/postgres"
-
 	"os"
 	"CIP-exchange-consumer-bitfinex/internal/db"
 	"github.com/joho/godotenv"
 	"strconv"
 	"CIP-exchange-consumer-bitfinex/pushers"
+	"time"
 )
 
 func init(){
@@ -62,34 +62,7 @@ func main() {
 	}
 	defer remotedb.Close()
 
-	// migrations are only performed by GORM if a table/column/index does not exist.
-	err = localdb.AutoMigrate(&db.BitfinexMarket{}, &db.BitfinexTicker{}, &db.BitfinexOrder{}, &db.BitfinexOrderBook{}).Error
-	if err != nil{
-		raven.CaptureErrorAndWait(err, nil)
-	}
-	err = localdb.Exec("CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;").Error
-	if err != nil{
-		raven.CaptureErrorAndWait(err, nil)
-	}
-	err = localdb.Exec("SELECT create_hypertable('bitfinex_orders', 'time',  'orderbook_id', if_not_exists => TRUE)").Error
-	if err != nil{
-		raven.CaptureErrorAndWait(err, nil)
-	}
-	err = localdb.Exec("SELECT create_hypertable('bitfinex_tickers', 'time', 'market_id', if_not_exists => TRUE)").Error
-	if err != nil{
-		raven.CaptureErrorAndWait(err, nil)
-	}
-	err =localdb.Exec("SELECT create_hypertable('bitfinex_order_books', 'time', 'market_id', if_not_exists => TRUE)").Error
-	if err != nil{
-		raven.CaptureErrorAndWait(err, nil)
-	}
-
-	// start a replication worker
-	limit,  err:= strconv.ParseInt(os.Getenv("REPLICATION_LIMIT"), 10, 64)
-	replicator := pushers.Replicator{Local:*localdb, Remote:*remotedb, Limit:limit}
-	go replicator.PushMarkets()
-	go replicator.Start()
-
+	db.Migrate(*localdb, *remotedb)
 
 	for _, pair := range pairs {
 		// if the market already exists, this fails (with a warning, but no error, and the market is returned
@@ -110,6 +83,16 @@ func main() {
 		go consumer.Consumer(bookChannel, orderhandler)
 		go consumer.Consumer(trades_chan, tickerhandler)
 	}
+
+	// start a replication worker
+	time.Sleep(3 * time.Second)
+	limit,  err:= strconv.ParseInt(os.Getenv("REPLICATION_LIMIT"), 10, 64)
+
+	replicator := pushers.Replicator{Local:*localdb, Remote:*remotedb, Limit:limit, Name:os.Getenv("NAME")}
+	replicator.Link()
+	defer replicator.Unlink()
+	replicator.PushMarkets()
+	go replicator.Start()
 
 	err = c.WebSocket.Subscribe()
 	if err != nil {
