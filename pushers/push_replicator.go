@@ -18,7 +18,7 @@ type Replicator struct {
 
 	//remote DB (the data warehouse)
 	Remote gorm.DB
-
+	DBlink string
 	//schema related settings
 
 	//replication related settings
@@ -44,7 +44,7 @@ func (r *Replicator) PushMarkets() {
 // Create a persistent dblink
 func (r *Replicator) Link() {
 	err := r.Remote.Exec(
-		fmt.Sprintf(`SELECT dblink_connect('%s', 'host=localhost user=karel password=Dwl1ml12_3# dbname=bitfinex');`, r.Name)).Error
+		fmt.Sprintf(`SELECT dblink_connect('%s', '%s');`, r.Name, r.DBlink)).Error
 	if err != nil{
 		log.Panic(err)
 	}
