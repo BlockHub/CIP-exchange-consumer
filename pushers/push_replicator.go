@@ -88,10 +88,25 @@ func (r *Replicator) SendTickers(){
 	}
 }
 
+func (r *Replicator) SendTrades(){
+	err := r.Remote.Exec(
+		fmt.Sprintf(
+			`INSERT INTO bitfinex_trades (id, market_id, price, amount, time)
+					SELECT *
+					FROM dblink(
+						'%s',
+						' DELETE FROM bitfinex_trades WHERE id in (SELECT id FROM bitfinex_trades ORDER BY time ASC LIMIT %d) RETURNING id, market_id, price, amount, time;'
+					) AS deleted (id INT, market_id INT, price NUMERIC, amount NUMERIC, time TIMESTAMP)`, r.Name, r.Limit)).Error
+	if err != nil{
+		log.Panic(err)
+	}
+}
+
 func (r *Replicator) Start() {
 	// an out interface to store lots of Order objects
 	for true {
 		r.SendTickers()
 		r.SendOrders()
+		r.SendTrades()
 	}
 }
