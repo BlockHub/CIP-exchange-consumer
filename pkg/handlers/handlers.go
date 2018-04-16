@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"CIP-exchange-consumer-bitfinex/internal/db"
 	"github.com/jinzhu/gorm"
+	"time"
 )
 
 type Handler interface {
@@ -36,6 +37,22 @@ type TickerDbHandler struct{
 	Market db.BitfinexMarket
 }
 func (h TickerDbHandler) Handle(data []float64){
-	db.AddTicker(*h.Db, h.Market, data[2], data[0])
+	fmt.Println(h.Market, "ticker", data)
+	db.AddTicker(*h.Db, h.Market, data[1], data[7])
+}
+
+// saves a ticker to the DB
+type TradeDbHandler struct{
+	Db *gorm.DB
+	Market db.BitfinexMarket
+}
+func (h TradeDbHandler) Handle(data []float64){
+	if len(data) == 3{
+		// sometimes frigging bitfinex does not give us an ID: we use zero which means
+		// the DB should auto increment.
+		data = append([]float64{float64(0)}, data...)
+	}
+	fmt.Println(data)
+	db.AddTrade(*h.Db, h.Market, data[2], data[3], time.Unix(int64(data[1]), 0))
 }
 

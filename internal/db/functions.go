@@ -48,6 +48,14 @@ func AddTicker(db gorm.DB, market BitfinexMarket, price float64, volume float64)
 	}
 }
 
+func AddTrade(db gorm.DB, market BitfinexMarket, price float64, amount float64, time time.Time){
+	trade := BitfinexTrade{0, market.ID, price, amount,time}
+	err := db.Create(&trade).Error
+	if err != nil {
+		log.Panic(err)
+	}
+}
+
 
 
 

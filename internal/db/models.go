@@ -28,7 +28,16 @@ type BitfinexMarket struct {
 type BitfinexTicker struct {
 	ID  uint 			`gorm:"primary_key"`
 	MarketID uint
+	//the highest bid prize
 	Price float64
 	Volume float64
+	Time time.Time		`gorm:"primary_key"`
+}
+
+type BitfinexTrade struct {
+	ID  uint 			`gorm:"primary_key"`
+	MarketID uint
+	Price float64
+	Amount float64
 	Time time.Time		`gorm:"primary_key"`
 }

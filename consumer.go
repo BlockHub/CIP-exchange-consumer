@@ -71,17 +71,23 @@ func main() {
 		orderbook := db.CreateOrderBook(*localdb, market)
 
 		bookChannel := make(chan []float64)
-		trades_chan := make(chan []float64)
+		tickerChan := make(chan []float64)
+		tradesChan := make(chan []float64)
+
 
 		c.WebSocket.AddSubscribe(bitfinex.ChanBook, strings.ToUpper(pair), bookChannel)
-		c.WebSocket.AddSubscribe(bitfinex.ChanTrade, strings.ToUpper(pair), trades_chan)
+		c.WebSocket.AddSubscribe(bitfinex.ChanTrade, strings.ToUpper(pair), tradesChan)
+		c.WebSocket.AddSubscribe(bitfinex.ChanTicker, strings.ToUpper(pair), tickerChan)
+
 
 		orderhandler := handlers.OrderDbHandler{localdb, orderbook}
 		tickerhandler := handlers.TickerDbHandler{localdb, market}
+		tradehandler := handlers.TradeDbHandler{Db:localdb, Market:market}
 		//tickerhandler := handlers.PrintHandler{}
 
 		go consumer.Consumer(bookChannel, orderhandler)
-		go consumer.Consumer(trades_chan, tickerhandler)
+		go consumer.Consumer(tickerChan, tickerhandler)
+		go consumer.Consumer(tradesChan, tradehandler)
 	}
 
 	fmt.Println("subscribing to orderbook")
